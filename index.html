@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador Comparativo: Cirurgia Robótica vs. Tradicional</title>
+  <style>
+    :root {
+      --bg-dark: #0a1128;
+      --card-bg: #1c2541;
+      --accent-robot: #00f2fe;
+      --accent-trad: #ff5252;
+      --text-main: #f0f4f8;
+      --text-sub: #8d99ae;
+      --border-color: #2b3a67;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .sim-container {
+      max-width: 1000px;
+      width: 100%;
+      background: #111827;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .sim-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sim-header h2 {
+      font-size: 2rem;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .sim-header p {
+      color: var(--text-sub);
+      font-size: 1rem;
+    }
+
+    .controls-panel {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      border: 1px solid var(--border-color);
+    }
+
+    .control-group {
+      margin-bottom: 20px;
+    }
+
+    .control-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .control-group label {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    .control-group label span.val {
+      color: var(--accent-robot);
+      font-weight: 700;
+    }
+
+    select, input[type="range"] {
+      width: 100%;
+      background: #0d1321;
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      height: 8px;
+      background: #2b3a67;
+      border-radius: 4px;
+      padding: 0;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-robot);
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid var(--border-color);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card.robotic {
+      border-top: 4px solid var(--accent-robot);
+    }
+
+    .card.traditional {
+      border-top: 4px solid var(--accent-trad);
+    }
+
+    .card-title {
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card.robotic .card-title { color: var(--accent-robot); }
+    .card.traditional .card-title { color: var(--accent-trad); }
+
+    .metric-row {
+      margin-bottom: 16px;
+    }
+
+    .metric-label {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .metric-value {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #fff;
+    }
+
+    .progress-bar-bg {
+      height: 10px;
+      background: #0d1321;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.4s ease, background-color 0.4s ease;
+      border-radius: 5px;
+    }
+
+    .status-tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    .tag-success { background: rgba(0, 242, 254, 0.15); color: var(--accent-robot); }
+    .tag-warning { background: rgba(255, 82, 82, 0.15); color: var(--accent-trad); }
+  </style>
+</head>
+<body>
+
+  <div class="sim-container">
+    <div class="sim-header">
+      <h2>Simulador Comparativo Cirúrgico</h2>
+      <p>Configure os parâmetros do procedimento e observe as variações operacionais entre os métodos</p>
+    </div>
+
+    <!-- Painel de Controles Interativos -->
+    <div class="controls-panel">
+      <div class="control-group">
+        <label for="procedureSelect">Tipo de Procedimento Cirúrgico:</label>
+        <select id="procedureSelect">
+          <option value="prostatectomia">Prostatectomia Radical (Urologia)</option>
+          <option value="colecistectomia">Colecistectomia / Remoção de Vesícula (Geral)</option>
+          <option value="histerectomia">Histerectomia Abdominal (Ginecologia)</option>
+          <option value="refeccaoCardiaca">Reconstrução de Válvula Mitral (Cardíaca)</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="complexitySlider">
+          Complexidade Anatômica do Paciente (IMC / Aderências): 
+          <span class="val" id="complexityVal">Normal (Nível 2)</span>
+        </label>
+        <input type="range" id="complexitySlider" min="1" max="4" step="1" value="2">
+      </div>
+    </div>
+
+    <!-- Grade Comparativa dos Resultados -->
+    <div class="comparison-grid">
+      
+      <!-- Card Cirurgia Robótica -->
+      <div class="card robotic">
+        <div class="card-title">
+          <span>🤖</span> Cirurgia Robótica (ex: Da Vinci)
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-label">
+            <span>Incisão Principal / Acesso</span>
+            <span class="metric-value" id="rob-incision">0.8 - 1.2 cm</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="rob-incision-bar" style="background: var(--accent-robot);"></div>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-label">
+            <span>Perda Estimada de Sangue</span>
+            <span class="metric-value" id="rob-blood">100 ml</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="rob-blood-bar" style="background: var(--accent-robot);"></div>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-label">
+            <span>Tempo de Internação Hospitalar</span>
+            <span class="metric-value" id="rob-stay">1 dia</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="rob-stay-bar" style="background: var(--accent-robot);"></div>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-label">
+            <span>Tempo de Recuperação Total</span>
+            <span class="metric-value" id="rob-recovery">14 dias</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="rob-recovery-bar" style="background: var(--accent-robot);"></div>
+          </div>
+        </div>
+
+        <span class="status-tag tag-success">Mínima Invasividade e Alta Precisão</span>
+      </div>
+
+      <!-- Card Cirurgia Tradicional -->
+      <div class="card traditional">
+        <div class="card-title">
+          <span>🔪</span> Cirurgia Tradicional (Aberta)
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-label">
+            <span>Incisão Principal / Acesso</span>
+            <span class="metric-value" id="trad-incision">12 - 20 cm</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="trad-incision-bar" style="background: var(--accent-trad);"></div>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-label">
+            <span>Perda Estimada de Sangue</span>
+            <span class="metric-value" id="trad-blood">450 ml</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="trad-blood-bar" style="background: var(--accent-trad);"></div>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-label">
+            <span>Tempo de Internação Hospitalar</span>
+            <span class="metric-value" id="trad-stay">4 dias</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="trad-stay-bar" style="background: var(--accent-trad);"></div>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-label">
+            <span>Tempo de Recuperação Total</span>
+            <span class="metric-value" id="trad-recovery">45 dias</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="trad-recovery-bar" style="background: var(--accent-trad);"></div>
+          </div>
+        </div>
+
+        <span class="status-tag tag-warning">Acesso Aberto Convencional</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Lógica JavaScript do Simulador -->
+  <script>
+    // Banco de Dados das Métricas de Cada Procedimento (Valores Base)
+    const database = {
+      prostatectomia: {
+        robotic: { incision: 1, blood: 120, stay: 1, recovery: 14 },
+        traditional: { incision: 15, blood: 500, stay: 4, recovery: 42 }
+      },
+      colecistectomia: {
+        robotic: { incision: 0.8, blood: 30, stay: 1, recovery: 7 },
+        traditional: { incision: 10, blood: 150, stay: 3, recovery: 21 }
+      },
+      histerectomia: {
+        robotic: { incision: 1.2, blood: 80, stay: 1, recovery: 14 },
+        traditional: { incision: 12, blood: 350, stay: 3, recovery: 35 }
+      },
+      refeccaoCardiaca: {
+        robotic: { incision: 1.5, blood: 200, stay: 3, recovery: 21 },
+        traditional: { incision: 25, blood: 800, stay: 7, recovery: 60 }
+      }
+    };
+
+    const complexityLabels = {
+      1: "Baixa (Nível 1)",
+      2: "Normal (Nível 2)",
+      3: "Alta (Nível 3)",
+      4: "Severa (Nível 4)"
+    };
+
+    // Elementos da Interface DOM
+    const procedureSelect = document.getElementById('procedureSelect');
+    const complexitySlider = document.getElementById('complexitySlider');
+    const complexityVal = document.getElementById('complexityVal');
+
+    function updateSimulation() {
+      const selectedProcedure = procedureSelect.value;
+      const complexityMultiplier = parseFloat(complexitySlider.value);
+
+      // Atualiza texto da complexidade
+      complexityVal.innerText = complexityLabels[complexityMultiplier];
+
+      const data = database[selectedProcedure];
+
+      // Fator de ajuste baseado no slider de complexidade
+      const factor = 1 + (complexityMultiplier - 1) * 0.2;
+
+      // Cálculos Robótica
+      const robBlood = Math.round(data.robotic.blood * factor);
+      const robStay = Math.round(data.robotic.stay * (1 + (complexityMultiplier - 1) * 0.15));
+      const robRecovery = Math.round(data.robotic.recovery * factor);
+
+      // Cálculos Tradicional
+      const tradBlood = Math.round(data.traditional.blood * (factor * 1.15));
+      const tradStay = Math.round(data.traditional.stay * (factor * 1.1));
+      const tradRecovery = Math.round(data.traditional.recovery * factor);
+
+      // Atualizar Textos na Tela
+      document.getElementById('rob-incision').innerText = `${data.robotic.incision} cm (Pórticos)`;
+      document.getElementById('rob-blood').innerText = `${robBlood} ml`;
+      document.getElementById('rob-stay').innerText = `${robStay} dia(s)`;
+      document.getElementById('rob-recovery').innerText = `${robRecovery} dias`;
+
+      document.getElementById('trad-incision').innerText = `${data.traditional.incision} cm`;
+      document.getElementById('trad-blood').innerText = `${tradBlood} ml`;
+      document.getElementById('trad-stay').innerText = `${tradStay} dia(s)`;
+      document.getElementById('trad-recovery').innerText = `${tradRecovery} dias`;
+
+      // Atualizar Largura das Barras Comparativas
+      const maxBlood = Math.max(robBlood, tradBlood) * 1.1;
+      const maxStay = Math.max(robStay, tradStay) * 1.1;
+      const maxRecovery = Math.max(robRecovery, tradRecovery) * 1.1;
+
+      document.getElementById('rob-incision-bar').style.width = `${(data.robotic.incision / data.traditional.incision) * 100}%`;
+      document.getElementById('rob-blood-bar').style.width = `${(robBlood / maxBlood) * 100}%`;
+      document.getElementById('rob-stay-bar').style.width = `${(robStay / maxStay) * 100}%`;
+      document.getElementById('rob-recovery-bar').style.width = `${(robRecovery / maxRecovery) * 100}%`;
+
+      document.getElementById('trad-incision-bar').style.width = `100%`;
+      document.getElementById('trad-blood-bar').style.width = `${(tradBlood / maxBlood) * 100}%`;
+      document.getElementById('trad-stay-bar').style.width = `${(tradStay / maxStay) * 100}%`;
+      document.getElementById('trad-recovery-bar').style.width = `${(tradRecovery / maxRecovery) * 100}%`;
+    }
+
+    // Escutadores de Eventos
+    procedureSelect.addEventListener('change', updateSimulation);
+    complexitySlider.addEventListener('input', updateSimulation);
+
+    // Inicializa a simulação ao carregar
+    updateSimulation();
+  </script>
+</body>
+</html>
